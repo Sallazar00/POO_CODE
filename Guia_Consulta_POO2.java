@@ -366,13 +366,300 @@ public class Main {
  * - throws: declara que um método pode propagar exceção.
  * - Checked: subclasses de Exception que não sejam RuntimeException.
  * - Unchecked: RuntimeException e subclasses.
- *
- * DICA:
- * Ao resolver um exercício, identifique primeiro:
- * 1. Quais classes existem?
- * 2. O que é comum e pode ir para uma superclasse?
- * 3. O que deve ser contrato de interface?
- * 4. Qual classe cria/guarda cada objeto (relacionamentos)?
- * 5. Quais regras podem gerar exceções?
- * 6. Onde o polimorfismo simplifica o código?
  */
+
+/* 1. Classe abstrata e polimorfismo 
+Crie a classe abstrata Conteudo, com atributos privados titulo (String) e duracaoMinutos (int), 
+construtor, getters, e o método abstrato calcularPontuacao() (retorna double). Inclua um método 
+concreto exibirFicha(), que utiliza o método abstrato calcularPontuacao(). 
+Crie pelo menos 2 subclasses concretas de da classe Conteudo (ex.: Filme, Serie, ou outras de sua 
+escolha), cada uma com uma regra própria de calcularPontuacao(). 
+2. Agregação 
+Crie a classe PerfilUsuario, que mantém uma List<Conteudo> de favoritos, recebidos já criados de 
+fora, através do método adicionarFavorito(Conteudo c). O perfil deve ter um limite máximo de 
+favoritos, definido por você. 
+3. Composição 
+Crie a classe HistoricoVisualizacao, com um total de minutos assistidos (int) e um método 
+registrarVisualizacao(int minutos). A classe PerfilUsuario deve criar seu próprio 
+HistoricoVisualizacao DENTRO do construtor (não recebido por parâmetro). 
+4. Interface 
+Crie a interface Bloqueavel, com o método bloquear(). A classe PerfilUsuario deve implementar 
+essa interface, marcando o perfil como bloqueado quando o método for chamado. 
+5. Exceções customizadas 
+Crie uma exceção CHECKED (extends Exception) chamada LimiteFavoritosExcedidoException, 
+lançada pelo PerfilUsuario ao tentar adicionar um favorito além do limite máximo. 
+Crie uma exceção UNCHECKED (extends RuntimeException) chamada TempoInvalidoException, 
+lançada pelo HistoricoVisualizacao ao tentar registrar uma visualização com tempo menor ou igual 
+a zero. 
+6. Classe de teste 
+Crie uma classe TesteStreaming com um método main que demonstre TODOS os requisitos acima 
+funcionando: criação de um PerfilUsuario com favoritos de subclasses diferentes (mostrando o 
+polimorfismo), registro de visualizações, bloqueio do perfil, e a ocorrência (tratada com try/catch) 
+de cada uma das duas exceções customizadas.*/
+/*
+ * Classe abstrata que representa qualquer conteúdo da plataforma.
+ */
+public abstract class Conteudo {
+    private String titulo;
+    private int duracaoMinutos;
+
+    public Conteudo(String titulo, int duracaoMinutos) {
+        this.titulo = titulo;
+        this.duracaoMinutos = duracaoMinutos;
+    }
+
+    public String getTitulo() {
+        return titulo;
+    }
+
+    public int getDuracaoMinutos() {
+        return duracaoMinutos;
+    }
+
+    // Cada subclasse deverá definir sua própria regra de pontuação.
+    public abstract double calcularPontuacao();
+
+    /*
+     * Método concreto que usa o método abstrato.
+     * Isso evidencia o polimorfismo em tempo de execução.
+     */
+    public void exibirFicha() {
+        System.out.println("Título: " + titulo);
+        System.out.println("Duração: " + duracaoMinutos + " minutos");
+        System.out.println("Pontuação: " + calcularPontuacao());
+    }
+}
+
+//ESPAÇO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+/*
+ * Subclasse concreta de Conteudo.
+ */
+public class Filme extends Conteudo {
+    private boolean lancamento;
+
+    public Filme(String titulo, int duracaoMinutos, boolean lancamento) {
+        super(titulo, duracaoMinutos);
+        this.lancamento = lancamento;
+    }
+
+    /*
+     * Regra própria: filmes recebem 1 ponto a cada 30 minutos.
+     * Lançamentos recebem 2 pontos extras.
+     */
+    @Override
+    public double calcularPontuacao() {
+        double pontos = getDuracaoMinutos() / 30.0;
+
+        if (lancamento) {
+            pontos += 2.0;
+        }
+
+        return pontos;
+    }
+}
+
+//ESPAÇO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+/*
+ * Outra subclasse concreta de Conteudo.
+ */
+public class Serie extends Conteudo {
+    private int numeroTemporadas;
+
+    public Serie(String titulo, int duracaoMinutos, int numeroTemporadas) {
+        super(titulo, duracaoMinutos);
+        this.numeroTemporadas = numeroTemporadas;
+    }
+
+    /*
+     * Regra própria: séries recebem 1 ponto a cada 20 minutos,
+     * mais 0,5 ponto por temporada.
+     */
+    @Override
+    public double calcularPontuacao() {
+        return (getDuracaoMinutos() / 20.0) + (numeroTemporadas * 0.5);
+    }
+}
+
+//ESPAÇO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+/*
+ * Interface para objetos que podem ser bloqueados.
+ */
+public interface Bloqueavel {
+    void bloquear();
+}
+
+//ESPAÇO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+/*
+ * Exceção checked: obriga o uso de try/catch ou throws.
+ */
+public class LimiteFavoritosExcedidoException extends Exception {
+    public LimiteFavoritosExcedidoException(String mensagem) {
+        super(mensagem);
+    }
+}
+
+//ESPAÇO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+/*
+ * Exceção unchecked: ocorre quando o tempo informado é inválido.
+ */
+public class TempoInvalidoException extends RuntimeException {
+    public TempoInvalidoException(String mensagem) {
+        super(mensagem);
+    }
+}
+
+//ESPAÇO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+/*
+ * Classe usada em composição pelo PerfilUsuario.
+ */
+public class HistoricoVisualizacao {
+    private int totalMinutosAssistidos;
+
+    public void registrarVisualizacao(int minutos) {
+        // Não é permitido registrar zero ou minutos negativos.
+        if (minutos <= 0) {
+            throw new TempoInvalidoException(
+                "O tempo de visualização deve ser maior que zero."
+            );
+        }
+
+        totalMinutosAssistidos += minutos;
+    }
+
+    public int getTotalMinutosAssistidos() {
+        return totalMinutosAssistidos;
+    }
+}
+
+//ESPAÇO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+import java.util.ArrayList;
+import java.util.List;
+
+/*
+ * PerfilUsuario agrega conteúdos criados externamente.
+ * Também compõe um Histórico, pois ele é criado no próprio construtor.
+ */
+public class PerfilUsuario implements Bloqueavel {
+    private static final int LIMITE_MAXIMO_FAVORITOS = 2;
+
+    private String nome;
+    private List<Conteudo> favoritos;
+    private HistoricoVisualizacao historico;
+    private boolean bloqueado;
+
+    public PerfilUsuario(String nome) {
+        this.nome = nome;
+        this.favoritos = new ArrayList<>();
+
+        // Composição: o histórico pertence exclusivamente a este perfil.
+        this.historico = new HistoricoVisualizacao();
+        this.bloqueado = false;
+    }
+
+    /*
+     * Agregação: recebe um Conteudo criado fora da classe.
+     */
+    public void adicionarFavorito(Conteudo conteudo)
+            throws LimiteFavoritosExcedidoException {
+
+        if (favoritos.size() >= LIMITE_MAXIMO_FAVORITOS) {
+            throw new LimiteFavoritosExcedidoException(
+                "Limite máximo de " + LIMITE_MAXIMO_FAVORITOS +
+                " favoritos atingido."
+            );
+        }
+
+        favoritos.add(conteudo);
+    }
+
+    public void exibirFavoritos() {
+        System.out.println("\n--- Favoritos de " + nome + " ---");
+
+        for (Conteudo conteudo : favoritos) {
+            /*
+             * Polimorfismo: o método executado depende do objeto,
+             * que pode ser Filme, Serie ou outra subclasse.
+             */
+            conteudo.exibirFicha();
+            System.out.println("-----------------------");
+        }
+    }
+
+    public HistoricoVisualizacao getHistorico() {
+        return historico;
+    }
+
+    public boolean isBloqueado() {
+        return bloqueado;
+    }
+
+    @Override
+    public void bloquear() {
+        bloqueado = true;
+        System.out.println("Perfil de " + nome + " foi bloqueado.");
+    }
+}
+
+//ESPAÇO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+/*
+ * Classe principal para testar todos os requisitos.
+ */
+public class TesteStreaming {
+    public static void main(String[] args) {
+        // Objetos criados externamente ao perfil.
+        Conteudo filme = new Filme("Interestelar", 169, true);
+        Conteudo serie = new Serie("Stranger Things", 50, 4);
+        Conteudo outroFilme = new Filme("O Poderoso Chefão", 175, false);
+
+        PerfilUsuario perfil = new PerfilUsuario("Ana");
+
+        try {
+            // Agregação de conteúdos de subclasses diferentes.
+            perfil.adicionarFavorito(filme);
+            perfil.adicionarFavorito(serie);
+
+            // Polimorfismo: Filme e Serie usam regras diferentes.
+            perfil.exibirFavoritos();
+
+            /*
+             * Tentativa de adicionar o terceiro favorito.
+             * O limite é 2, então a exceção checked será lançada.
+             */
+            perfil.adicionarFavorito(outroFilme);
+
+        } catch (LimiteFavoritosExcedidoException e) {
+            System.out.println("\nErro de favoritos: " + e.getMessage());
+        }
+
+        try {
+            // Registro válido de visualização.
+            perfil.getHistorico().registrarVisualizacao(90);
+
+            System.out.println(
+                "\nTotal assistido: " +
+                perfil.getHistorico().getTotalMinutosAssistidos() +
+                " minutos."
+            );
+
+            /*
+             * Tentativa inválida: dispara a exceção unchecked.
+             */
+            perfil.getHistorico().registrarVisualizacao(0);
+
+        } catch (TempoInvalidoException e) {
+            System.out.println("Erro de visualização: " + e.getMessage());
+        }
+
+        // Teste da interface Bloqueavel.
+        perfil.bloquear();
+        System.out.println("Perfil está bloqueado? " + perfil.isBloqueado());
+    }
+}
